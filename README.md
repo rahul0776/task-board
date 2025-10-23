@@ -9,7 +9,7 @@
 
 A modern, full-stack task management application demonstrating production-ready Go backend architecture with real-time WebSocket updates, JWT authentication, and a polished React TypeScript frontend.
 
-![TaskBoard Demo](https://via.placeholder.com/1200x600/667eea/ffffff?text=TaskBoard+Dashboard)
+![TaskBoard Demo](docs/screenshots/dashboard.png)
 
 ---
 
