@@ -9,7 +9,7 @@
 
 A modern, full-stack task management application demonstrating production-ready Go backend architecture with real-time WebSocket updates, JWT authentication, and a polished React TypeScript frontend.
 
-![TaskBoard Demo](docs/screenshots/dashboard.png)
+![TaskBoard Demo](docs/screenshots/dashboard.jpg)
 
 ---
 
@@ -181,6 +181,26 @@ type Hub struct {
 - Dark mode ready (prepared for implementation)
 - Custom scrollbars
 - Loading states and error handling
+
+---
+
+## 📸 Application Screenshots
+
+<div align="center">
+
+### 🎯 Dashboard View
+![Dashboard](docs/screenshots/dashboard.jpg)
+*Real-time productivity metrics, board overview, and beautiful gradient UI*
+
+### 📋 Kanban Board
+![Board View](docs/screenshots/board-view.jpg)
+*Drag-and-drop task management with real-time WebSocket updates*
+
+### 🔐 Modern Login
+![Login](docs/screenshots/login.jpg)
+*Beautiful gradient UI with glassmorphism effects and smooth animations*
+
+</div>
 
 ---
 
