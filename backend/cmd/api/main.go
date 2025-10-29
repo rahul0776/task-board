@@ -60,6 +60,14 @@ func main() {
 	// CORS middleware
 	router.Use(middleware.CORS())
 
+	// Health check endpoint (no auth required)
+	router.GET("/api/v1/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "ok",
+			"message": "TaskBoard API is running",
+		})
+	})
+
 	// API routes
 	api := router.Group("/api/v1")
 	{
