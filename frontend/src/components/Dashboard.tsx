@@ -97,12 +97,12 @@ const Dashboard: React.FC = () => {
 
   const getColorClass = (index: number) => {
     const colors = [
-      'from-blue-400 to-blue-600',
-      'from-purple-400 to-purple-600',
-      'from-pink-400 to-pink-600',
-      'from-green-400 to-green-600',
-      'from-yellow-400 to-yellow-600',
-      'from-red-400 to-red-600',
+      'from-orange-200 to-orange-300',
+      'from-orange-300 to-orange-400',
+      'from-orange-200 to-orange-400',
+      'from-orange-100 to-orange-300',
+      'from-orange-300 to-orange-500',
+      'from-orange-200 to-orange-500',
     ];
     return colors[index % colors.length];
   };
@@ -119,7 +119,7 @@ const Dashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
+        <div className="bg-gradient-to-br from-orange-200 to-orange-300 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm font-medium">Total Boards</p>
@@ -129,7 +129,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
+        <div className="bg-gradient-to-br from-orange-300 to-orange-400 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm font-medium">Active Tasks</p>
@@ -139,7 +139,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
+        <div className="bg-gradient-to-br from-orange-400 to-orange-500 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-pink-100 text-sm font-medium">Completed</p>
@@ -149,7 +149,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
+        <div className="bg-gradient-to-br from-orange-200 to-orange-400 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm font-medium">Productivity</p>
@@ -166,7 +166,7 @@ const Dashboard: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-800">Your Boards</h2>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold"
+          className="flex items-center space-x-2 bg-gradient-to-r from-orange-300 to-orange-400 hover:from-orange-400 hover:to-orange-500 text-white px-6 py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold"
         >
           <span className="text-xl">+</span>
           <span>New Board</span>
@@ -184,7 +184,7 @@ const Dashboard: React.FC = () => {
           <p className="text-gray-500 mb-6">Create your first board to get started!</p>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold"
+            className="bg-gradient-to-r from-orange-300 to-orange-400 hover:from-orange-400 hover:to-orange-500 text-white px-8 py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold"
           >
             Create Your First Board
           </button>
@@ -278,7 +278,7 @@ const Dashboard: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
+                  className="flex-1 bg-gradient-to-r from-orange-300 to-orange-400 hover:from-orange-400 hover:to-orange-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
                 >
                   Create Board
                 </button>

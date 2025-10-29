@@ -91,12 +91,12 @@ code {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);
+  background: #FFD4B8;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #5568d3 0%, #63408b 100%);
+  background: #FFC299;
 }
 
 /* Glassmorphism Effect */
@@ -120,7 +120,7 @@ code {
 
 /* Gradient Text */
 .gradient-text {
-  background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(to right, #FFC299 0%, #FFD4B8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -159,7 +159,7 @@ code {
 
 .spinner {
   border: 4px solid rgba(0, 0, 0, 0.1);
-  border-left-color: #667eea;
+  border-left-color: #FFC299;
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -196,13 +196,13 @@ code {
 }
 
 *:focus-visible {
-  outline: 2px solid #667eea;
+  outline: 2px solid #FFC299;
   outline-offset: 2px;
 }
 
 /* Selection */
 ::selection {
-  background: rgba(102, 126, 234, 0.3);
+  background: rgba(255, 212, 184, 0.4);
   color: #1f2937;
 }
 

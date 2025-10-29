@@ -20,7 +20,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full bg-gradient-to-b from-indigo-600 to-indigo-800 text-white transition-all duration-300 ease-in-out z-50 shadow-2xl ${
+        className={`fixed left-0 top-0 h-full bg-gradient-to-b from-orange-300 to-orange-500 text-white transition-all duration-300 ease-in-out z-50 shadow-2xl ${
           sidebarOpen ? 'w-64' : 'w-20'
         }`}
       >
@@ -80,7 +80,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* User Profile */}
           <div className="p-4 border-t border-indigo-500">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-200 to-orange-400 flex items-center justify-center text-white font-bold shadow-lg">
                 {user?.first_name?.charAt(0) || 'U'}
               </div>
               {sidebarOpen && (
