@@ -9,6 +9,12 @@
 
 A modern, full-stack task management application demonstrating production-ready Go backend architecture with real-time WebSocket updates, JWT authentication, and a polished React TypeScript frontend.
 
+## 🌐 Live Demo
+
+**✨ Try it now:** [https://rahultaskboard.up.railway.app/](https://rahultaskboard.up.railway.app/)
+
+The application is deployed on Railway with PostgreSQL and Redis. Create an account and experience the real-time task management features!
+
 ![TaskBoard Demo](docs/screenshots/dashboard.jpg)
 
 ---
