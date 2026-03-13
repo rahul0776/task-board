@@ -16,8 +16,9 @@ type Config struct {
 	DBName     string
 
 	// Redis
-	RedisHost string
-	RedisPort string
+	RedisHost     string
+	RedisPort     string
+	RedisPassword string
 
 	// JWT
 	JWTSecret string
@@ -44,8 +45,9 @@ func Load() *Config {
 		DBName:     getEnv("DB_NAME", "taskboard"),
 
 		// Redis
-		RedisHost: getEnv("REDIS_HOST", "localhost"),
-		RedisPort: getEnv("REDIS_PORT", "6379"),
+		RedisHost:     getEnv("REDIS_HOST", "localhost"),
+		RedisPort:     getEnv("REDIS_PORT", "6379"),
+		RedisPassword: getEnv("REDIS_PASSWORD", ""),
 
 		// JWT
 		JWTSecret: getEnv("JWT_SECRET", "your-secret-key-here"),
