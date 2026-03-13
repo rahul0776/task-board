@@ -42,8 +42,5 @@ services:
     plan: free
     envVars:
       - key: REACT_APP_API_URL
-        fromService:
-          name: taskboard-backend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        value: "https://taskboard-backend-3w9s.onrender.com/api/v1"
 
