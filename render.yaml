@@ -1,24 +1,4 @@
 services:
-  # PostgreSQL Database
-  - type: pserv
-    name: taskboard-postgres
-    env: docker
-    plan: free
-    dockerfilePath: ./Dockerfile.postgres
-    envVars:
-      - key: POSTGRES_USER
-        value: taskboard
-      - key: POSTGRES_PASSWORD
-        generateValue: true
-      - key: POSTGRES_DB
-        value: taskboard
-
-  # Redis
-  - type: redis
-    name: taskboard-redis
-    plan: free
-    maxmemoryPolicy: noeviction
-
   # Backend API
   - type: web
     name: taskboard-backend
@@ -30,35 +10,19 @@ services:
       - key: PORT
         value: 8080
       - key: DB_HOST
-        fromDatabase:
-          name: taskboard-postgres
-          property: host
+        sync: false
       - key: DB_PORT
-        fromDatabase:
-          name: taskboard-postgres
-          property: port
+        value: "5432"
       - key: DB_USER
-        fromDatabase:
-          name: taskboard-postgres
-          property: user
+        sync: false
       - key: DB_PASSWORD
-        fromDatabase:
-          name: taskboard-postgres
-          property: password
+        sync: false
       - key: DB_NAME
-        fromDatabase:
-          name: taskboard-postgres
-          property: database
+        sync: false
       - key: REDIS_HOST
-        fromService:
-          name: taskboard-redis
-          type: redis
-          property: host
+        sync: false
       - key: REDIS_PORT
-        fromService:
-          name: taskboard-redis
-          type: redis
-          property: port
+        value: "6379"
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRY
