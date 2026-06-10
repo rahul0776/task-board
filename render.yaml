@@ -1,23 +1,17 @@
-services:
-  # PostgreSQL Database
-  - type: pserv
-    name: taskboard-postgres
-    env: docker
+databases:
+  # Render-managed PostgreSQL
+  - name: taskboard-postgres
+    databaseName: taskboard
+    user: taskboard
     plan: free
-    dockerfilePath: ./Dockerfile.postgres
-    envVars:
-      - key: POSTGRES_USER
-        value: taskboard
-      - key: POSTGRES_PASSWORD
-        generateValue: true
-      - key: POSTGRES_DB
-        value: taskboard
 
+services:
   # Redis
   - type: redis
     name: taskboard-redis
     plan: free
     maxmemoryPolicy: noeviction
+    ipAllowList: []
 
   # Backend API
   - type: web
@@ -49,6 +43,8 @@ services:
         fromDatabase:
           name: taskboard-postgres
           property: database
+      - key: DB_SSLMODE
+        value: require
       - key: REDIS_HOST
         fromService:
           name: taskboard-redis
@@ -59,25 +55,21 @@ services:
           name: taskboard-redis
           type: redis
           property: port
-      - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_EXPIRY
-        value: 24h
+      # Only requests from the deployed frontend are allowed (CORS + WebSocket origin)
       - key: CORS_ORIGIN
-        value: "*"
+        value: https://rahultaskboard.onrender.com
     healthCheckPath: /api/v1/health
 
-  # Frontend
+  # Frontend (nginx serves the SPA and proxies /api to the backend)
   - type: web
     name: taskboard-frontend
     env: docker
     dockerfilePath: ./frontend/Dockerfile.prod
     dockerContext: ./frontend
     plan: free
+    healthCheckPath: /health
     envVars:
-      - key: REACT_APP_API_URL
-        fromService:
-          name: taskboard-backend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
-
+      # Public URL of the taskboard-backend service, e.g.
+      # https://taskboard-backend-xxxx.onrender.com (set in the Render dashboard)
+      - key: BACKEND_URL
+        sync: false

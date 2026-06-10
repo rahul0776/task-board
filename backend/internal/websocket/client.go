@@ -3,13 +3,42 @@ package websocket
 import (
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/websocket"
 )
 
+const maxMessageSize = 65536 // 64KB cap on inbound frames
+
+// allowedOrigins holds the origins permitted to open WebSocket connections,
+// populated from CORS_ORIGIN at startup via SetAllowedOrigins. Empty or "*"
+// allows any origin.
+var allowedOrigins map[string]bool
+
+func SetAllowedOrigins(corsOrigin string) {
+	if corsOrigin == "" || corsOrigin == "*" {
+		allowedOrigins = nil
+		return
+	}
+	allowedOrigins = make(map[string]bool)
+	for _, o := range strings.Split(corsOrigin, ",") {
+		if o = strings.TrimSpace(strings.TrimSuffix(o, "/")); o != "" {
+			allowedOrigins[o] = true
+		}
+	}
+}
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins in development
+		if allowedOrigins == nil {
+			return true
+		}
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			// Non-browser clients (no Origin header) are not subject to CSRF.
+			return true
+		}
+		return allowedOrigins[strings.TrimSuffix(origin, "/")]
 	},
 }
 
@@ -38,6 +67,8 @@ func (c *Client) readPump() {
 		c.hub.Unregister(c)
 		c.conn.Close()
 	}()
+
+	c.conn.SetReadLimit(maxMessageSize)
 
 	for {
 		_, _, err := c.conn.ReadMessage()

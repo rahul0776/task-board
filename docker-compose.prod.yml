@@ -54,11 +54,9 @@ services:
       DB_NAME: ${DB_NAME:-taskboard}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRY: ${JWT_EXPIRY:-24h}
       PORT: 8080
       HOST: 0.0.0.0
-      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
     depends_on:
       postgres:
         condition: service_healthy
@@ -83,7 +81,8 @@ services:
       dockerfile: Dockerfile.prod
     container_name: taskboard-frontend
     environment:
-      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8080/api/v1}
+      # Proxy target for /api and /api/v1/ws (substituted into nginx config at start)
+      BACKEND_URL: ${BACKEND_URL:-http://backend:8080}
     depends_on:
       - backend
     networks:
