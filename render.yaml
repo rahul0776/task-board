@@ -9,6 +9,7 @@ services:
     envVars:
       - key: PORT
         value: 8080
+      # Database is external (Neon) — values set in the Render dashboard
       - key: DB_HOST
         sync: false
       - key: DB_PORT
@@ -19,28 +20,31 @@ services:
         sync: false
       - key: DB_NAME
         sync: false
+      - key: DB_SSLMODE
+        value: require
       - key: REDIS_HOST
         sync: false
       - key: REDIS_PORT
         value: "6379"
       - key: REDIS_PASSWORD
         sync: false
-      - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_EXPIRY
-        value: 24h
+      # Only requests from the deployed frontend are allowed (CORS + WebSocket origin)
       - key: CORS_ORIGIN
-        value: "*"
+        value: https://rahultaskboard.onrender.com
     healthCheckPath: /api/v1/health
 
-  # Frontend
+  # Frontend (nginx serves the SPA and proxies /api + /ws to the backend)
   - type: web
     name: taskboard-frontend
     env: docker
     dockerfilePath: ./frontend/Dockerfile.prod
     dockerContext: ./frontend
     plan: free
+    healthCheckPath: /health
     envVars:
+      # Baked into the JS bundle at build time (REST calls go straight to the backend)
       - key: REACT_APP_API_URL
         value: "https://taskboard-backend-3w9s.onrender.com/api/v1"
-
+      # Runtime proxy target for /api and /api/v1/ws (WebSocket) in nginx
+      - key: BACKEND_URL
+        value: "https://taskboard-backend-3w9s.onrender.com"

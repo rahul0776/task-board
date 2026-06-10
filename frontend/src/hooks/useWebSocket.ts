@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface WebSocketMessage {
   type: string;
@@ -20,21 +20,22 @@ export const resolveWebSocketUrl = (url: string) => {
 };
 
 export const useWebSocket = (url: string) => {
-  const resolvedUrl = resolveWebSocketUrl(url);
-  const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const socketRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
+    const resolvedUrl = resolveWebSocketUrl(url);
+    let closedIntentionally = false;
+
     const connect = () => {
       try {
         const ws = new WebSocket(resolvedUrl);
-        
+        socketRef.current = ws;
+
         ws.onopen = () => {
-          console.log('WebSocket connected');
           setIsConnected(true);
-          setSocket(ws);
         };
 
         ws.onmessage = (event) => {
@@ -47,14 +48,15 @@ export const useWebSocket = (url: string) => {
         };
 
         ws.onclose = () => {
-          console.log('WebSocket disconnected');
           setIsConnected(false);
-          setSocket(null);
-          
-          // Attempt to reconnect after 3 seconds
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
-          }, 3000);
+          if (socketRef.current === ws) {
+            socketRef.current = null;
+          }
+
+          if (!closedIntentionally) {
+            // Attempt to reconnect after 3 seconds
+            reconnectTimeoutRef.current = setTimeout(connect, 3000);
+          }
         };
 
         ws.onerror = (error) => {
@@ -68,23 +70,25 @@ export const useWebSocket = (url: string) => {
     connect();
 
     return () => {
+      closedIntentionally = true;
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
-      if (socket) {
-        socket.close();
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
       }
     };
   }, [url]);
 
-  const sendMessage = (message: WebSocketMessage) => {
-    if (socket && isConnected) {
+  const sendMessage = useCallback((message: WebSocketMessage) => {
+    const socket = socketRef.current;
+    if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify(message));
     }
-  };
+  }, []);
 
   return {
-    socket,
     isConnected,
     lastMessage,
     sendMessage,

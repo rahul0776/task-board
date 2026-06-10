@@ -1,97 +1,53 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import { useAuth } from '../services/AuthContext.tsx';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
+// App chrome — mirrors the landing page nav: dark blurred sticky bar,
+// CSS logo mark, mono metadata. Pages themselves stay on the light theme.
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { displayName } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Sidebar */}
-      <aside
-        className={`fixed left-0 top-0 h-full bg-gradient-to-b from-orange-300 to-orange-500 text-white transition-all duration-300 ease-in-out z-50 shadow-2xl ${
-          sidebarOpen ? 'w-64' : 'w-20'
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-indigo-500">
-            <div className="flex items-center justify-between">
-              {sidebarOpen ? (
-                <div>
-                  <h1 className="text-2xl font-bold flex items-center">
-                    <span className="mr-2">📋</span>
-                    TaskBoard
-                  </h1>
-                  <p className="text-xs text-indigo-200 mt-1">Organize your work</p>
-                </div>
-              ) : (
-                <span className="text-3xl">📋</span>
-              )}
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 hover:bg-indigo-700 rounded-lg transition-colors"
-              >
-                {sidebarOpen ? '←' : '→'}
-              </button>
-            </div>
+    <div className="min-h-screen bg-surface">
+      <nav className="sticky top-0 z-50 bg-[rgba(25,18,16,0.86)] backdrop-blur-[14px] border-b border-dark-line">
+        <div className="max-w-[1140px] mx-auto px-8 h-16 flex items-center gap-7">
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 font-display font-bold text-[18px] text-dark-text mr-auto no-underline"
+          >
+            <span className="w-[26px] h-[26px] rounded-[7px] bg-accent-grad grid place-items-center">
+              <span className="block w-2.5 h-2.5 rounded-[3px] border-2 border-white" />
+            </span>
+            TaskBoard
+          </Link>
+
+          <div className="hidden sm:flex gap-6">
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                `text-[15px] font-medium no-underline transition-colors duration-200 ${
+                  isActive ? 'text-dark-text' : 'text-dark-muted hover:text-dark-text'
+                }`
+              }
+            >
+              Dashboard
+            </NavLink>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
-            <Link
-              to="/dashboard"
-              className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105"
-            >
-              <span className="text-2xl">🏠</span>
-              {sidebarOpen && <span className="font-medium">Dashboard</span>}
-            </Link>
-            
-            <Link
-              to="/dashboard"
-              className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105"
-            >
-              <span className="text-2xl">📊</span>
-              {sidebarOpen && <span className="font-medium">My Boards</span>}
-            </Link>
-
-            <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105 cursor-pointer">
-              <span className="text-2xl">⭐</span>
-              {sidebarOpen && <span className="font-medium">Favorites</span>}
-            </div>
-
-            <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105 cursor-pointer">
-              <span className="text-2xl">🔔</span>
-              {sidebarOpen && <span className="font-medium">Notifications</span>}
-            </div>
-          </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t border-indigo-500">
-            {sidebarOpen && (
-              <div className="text-center">
-                <p className="text-xs text-indigo-200">
-                  TaskBoard v1.0
-                </p>
-              </div>
-            )}
-          </div>
+          <span
+            className="font-mono text-[12.5px] text-dark-muted border border-dark-line rounded-lg px-[11px] py-1.5 bg-white/[0.03]"
+            title="Anonymous session"
+          >
+            {displayName}
+          </span>
         </div>
-      </aside>
+      </nav>
 
-      {/* Main Content */}
-      <main
-        className={`transition-all duration-300 ease-in-out ${
-          sidebarOpen ? 'ml-64' : 'ml-20'
-        }`}
-      >
-        <div className="p-8">
-          {children}
-        </div>
-      </main>
+      <main className="max-w-[1140px] mx-auto px-8 py-10">{children}</main>
     </div>
   );
 };

@@ -2,7 +2,6 @@ package config
 
 import (
 	"os"
-	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -14,15 +13,12 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBName     string
+	DBSSLMode  string
 
 	// Redis
 	RedisHost     string
 	RedisPort     string
 	RedisPassword string
-
-	// JWT
-	JWTSecret string
-	JWTExpiry  time.Duration
 
 	// Server
 	Host string
@@ -43,15 +39,14 @@ func Load() *Config {
 		DBUser:     getEnv("DB_USER", "postgres"),
 		DBPassword: getEnv("DB_PASSWORD", "password"),
 		DBName:     getEnv("DB_NAME", "taskboard"),
+		// Default matches production (Neon requires TLS); local compose
+		// setups set DB_SSLMODE=disable explicitly.
+		DBSSLMode:  getEnv("DB_SSLMODE", "require"),
 
 		// Redis
 		RedisHost:     getEnv("REDIS_HOST", "localhost"),
 		RedisPort:     getEnv("REDIS_PORT", "6379"),
 		RedisPassword: getEnv("REDIS_PASSWORD", ""),
-
-		// JWT
-		JWTSecret: getEnv("JWT_SECRET", "your-secret-key-here"),
-		JWTExpiry: parseDuration(getEnv("JWT_EXPIRY", "24h")),
 
 		// Server
 		Host: getEnv("HOST", "0.0.0.0"),
@@ -67,12 +62,4 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
-}
-
-func parseDuration(s string) time.Duration {
-	duration, err := time.ParseDuration(s)
-	if err != nil {
-		return 24 * time.Hour // default to 24 hours
-	}
-	return duration
 }

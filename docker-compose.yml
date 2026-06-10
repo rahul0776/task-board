@@ -1,4 +1,4 @@
-services:
+﻿services:
   postgres:
     image: postgres:15-alpine
     environment:
@@ -39,6 +39,7 @@ services:
       DB_USER: postgres
       DB_PASSWORD: password
       DB_NAME: taskboard
+      DB_SSLMODE: disable
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: your-secret-key-here

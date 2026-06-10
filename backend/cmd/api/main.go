@@ -23,10 +23,9 @@ func main() {
 		log.Fatal("Failed to initialize database:", err)
 	}
 
-	// Initialize Redis
-	_, err = database.InitializeRedis(cfg)
-	if err != nil {
-		log.Fatal("Failed to initialize Redis:", err)
+	// Initialize Redis (currently unused; don't block startup if unavailable)
+	if _, err := database.InitializeRedis(cfg); err != nil {
+		log.Printf("Warning: failed to initialize Redis: %v", err)
 	}
 
 	// Initialize repositories
@@ -55,7 +54,8 @@ func main() {
 	router := gin.Default()
 
 	// CORS middleware
-	router.Use(middleware.CORS())
+	router.Use(middleware.CORS(cfg.CORSOrigin))
+	websocket.SetAllowedOrigins(cfg.CORSOrigin)
 
 	// Health check endpoint (no auth required)
 	router.GET("/api/v1/health", func(c *gin.Context) {
@@ -64,6 +64,11 @@ func main() {
 			"message": "TaskBoard API is running",
 		})
 	})
+
+	// WebSocket route. Registered outside the anonymous-user group because
+	// browsers cannot send custom headers (X-Anonymous-User-Id) during the
+	// WebSocket handshake; origin checking happens in the upgrader.
+	router.GET("/api/v1/ws", wsHandler.HandleWebSocket)
 
 	// API routes
 	api := router.Group("/api/v1")
@@ -90,9 +95,6 @@ func main() {
 			tasks.PUT("/:id", taskHandler.UpdateTask)
 			tasks.DELETE("/:id", taskHandler.DeleteTask)
 		}
-
-		// WebSocket route
-		api.GET("/ws", wsHandler.HandleWebSocket)
 	}
 
 	// Start server

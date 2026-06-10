@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"task-board/internal/service"
@@ -19,20 +20,21 @@ func NewBoardHandler(boardService service.BoardService) *BoardHandler {
 }
 
 type CreateBoardRequest struct {
-	Title       string `json:"title" binding:"required"`
-	Description string `json:"description"`
+	Title       string `json:"title" binding:"required,min=1,max=255"`
+	Description string `json:"description" binding:"max=5000"`
 }
 
 type UpdateBoardRequest struct {
-	Title       string `json:"title" binding:"required"`
-	Description string `json:"description"`
+	Title       string `json:"title" binding:"required,min=1,max=255"`
+	Description string `json:"description" binding:"max=5000"`
 }
 
 func (h *BoardHandler) GetBoards(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	boards, err := h.boardService.GetBoards(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("failed to fetch boards for user %d: %v", userID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch boards"})
 		return
 	}
 

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"task-board/internal/domain"
@@ -21,18 +22,18 @@ func NewTaskHandler(taskService service.TaskService) *TaskHandler {
 }
 
 type CreateTaskRequest struct {
-	Title       string    `json:"title" binding:"required"`
-	Description string    `json:"description"`
-	Priority    string    `json:"priority"`
+	Title       string    `json:"title" binding:"required,min=1,max=255"`
+	Description string    `json:"description" binding:"max=5000"`
+	Priority    string    `json:"priority" binding:"omitempty,oneof=low medium high"`
 	AssigneeID  *uint     `json:"assignee_id"`
 	DueDate     *string   `json:"due_date"`
 }
 
 type UpdateTaskRequest struct {
-	Title       string    `json:"title" binding:"required"`
-	Description string    `json:"description"`
-	Status      string    `json:"status"`
-	Priority    string    `json:"priority"`
+	Title       string    `json:"title" binding:"required,min=1,max=255"`
+	Description string    `json:"description" binding:"max=5000"`
+	Status      string    `json:"status" binding:"omitempty,oneof=todo in_progress done"`
+	Priority    string    `json:"priority" binding:"omitempty,oneof=low medium high"`
 	AssigneeID  *uint     `json:"assignee_id"`
 	DueDate     *string   `json:"due_date"`
 }
@@ -48,7 +49,8 @@ func (h *TaskHandler) GetTasks(c *gin.Context) {
 
 	tasks, err := h.taskService.GetTasks(uint(boardID), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("failed to fetch tasks for board %d, user %d: %v", boardID, userID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tasks"})
 		return
 	}
 

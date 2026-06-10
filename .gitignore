@@ -61,3 +61,7 @@ redis-data/
 Thumbs.db
 .DS_Store
 
+
+# Local working materials
+.claude/
+design_handoff_taskboard_landing/
