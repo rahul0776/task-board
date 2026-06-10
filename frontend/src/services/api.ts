@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { ensureAnonymousUserId } from './anonymous.ts';
 
-// In production builds the API is reached same-origin via the nginx proxy
+// REACT_APP_API_URL is baked in at build time on Render (direct backend URL).
+// Without it, production builds use the same-origin nginx proxy
 // (see frontend/nginx.prod.conf.template); localhost is only for `npm start`.
 const API_BASE_URL =
   process.env.REACT_APP_API_URL ||

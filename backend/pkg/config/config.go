@@ -16,8 +16,9 @@ type Config struct {
 	DBSSLMode  string
 
 	// Redis
-	RedisHost string
-	RedisPort string
+	RedisHost     string
+	RedisPort     string
+	RedisPassword string
 
 	// Server
 	Host string
@@ -38,11 +39,14 @@ func Load() *Config {
 		DBUser:     getEnv("DB_USER", "postgres"),
 		DBPassword: getEnv("DB_PASSWORD", "password"),
 		DBName:     getEnv("DB_NAME", "taskboard"),
-		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
+		// Default matches production (Neon requires TLS); local compose
+		// setups set DB_SSLMODE=disable explicitly.
+		DBSSLMode:  getEnv("DB_SSLMODE", "require"),
 
 		// Redis
-		RedisHost: getEnv("REDIS_HOST", "localhost"),
-		RedisPort: getEnv("REDIS_PORT", "6379"),
+		RedisHost:     getEnv("REDIS_HOST", "localhost"),
+		RedisPort:     getEnv("REDIS_PORT", "6379"),
+		RedisPassword: getEnv("REDIS_PASSWORD", ""),
 
 		// Server
 		Host: getEnv("HOST", "0.0.0.0"),

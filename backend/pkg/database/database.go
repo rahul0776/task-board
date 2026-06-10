@@ -34,7 +34,8 @@ func Initialize(cfg *config.Config) (*gorm.DB, error) {
 
 func InitializeRedis(cfg *config.Config) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr: fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
+		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
+		Password: cfg.RedisPassword,
 	})
 
 	return client, nil

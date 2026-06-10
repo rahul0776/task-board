@@ -1,18 +1,4 @@
-databases:
-  # Render-managed PostgreSQL
-  - name: taskboard-postgres
-    databaseName: taskboard
-    user: taskboard
-    plan: free
-
 services:
-  # Redis
-  - type: redis
-    name: taskboard-redis
-    plan: free
-    maxmemoryPolicy: noeviction
-    ipAllowList: []
-
   # Backend API
   - type: web
     name: taskboard-backend
@@ -23,44 +9,31 @@ services:
     envVars:
       - key: PORT
         value: 8080
+      # Database is external (Neon) — values set in the Render dashboard
       - key: DB_HOST
-        fromDatabase:
-          name: taskboard-postgres
-          property: host
+        sync: false
       - key: DB_PORT
-        fromDatabase:
-          name: taskboard-postgres
-          property: port
+        value: "5432"
       - key: DB_USER
-        fromDatabase:
-          name: taskboard-postgres
-          property: user
+        sync: false
       - key: DB_PASSWORD
-        fromDatabase:
-          name: taskboard-postgres
-          property: password
+        sync: false
       - key: DB_NAME
-        fromDatabase:
-          name: taskboard-postgres
-          property: database
+        sync: false
       - key: DB_SSLMODE
         value: require
       - key: REDIS_HOST
-        fromService:
-          name: taskboard-redis
-          type: redis
-          property: host
+        sync: false
       - key: REDIS_PORT
-        fromService:
-          name: taskboard-redis
-          type: redis
-          property: port
+        value: "6379"
+      - key: REDIS_PASSWORD
+        sync: false
       # Only requests from the deployed frontend are allowed (CORS + WebSocket origin)
       - key: CORS_ORIGIN
         value: https://rahultaskboard.onrender.com
     healthCheckPath: /api/v1/health
 
-  # Frontend (nginx serves the SPA and proxies /api to the backend)
+  # Frontend (nginx serves the SPA and proxies /api + /ws to the backend)
   - type: web
     name: taskboard-frontend
     env: docker
@@ -69,7 +42,9 @@ services:
     plan: free
     healthCheckPath: /health
     envVars:
-      # Public URL of the taskboard-backend service, e.g.
-      # https://taskboard-backend-xxxx.onrender.com (set in the Render dashboard)
+      # Baked into the JS bundle at build time (REST calls go straight to the backend)
+      - key: REACT_APP_API_URL
+        value: "https://taskboard-backend-3w9s.onrender.com/api/v1"
+      # Runtime proxy target for /api and /api/v1/ws (WebSocket) in nginx
       - key: BACKEND_URL
-        sync: false
+        value: "https://taskboard-backend-3w9s.onrender.com"

@@ -11,7 +11,7 @@ A modern, full-stack task management application demonstrating production-ready 
 
 ## 🌐 Live Demo
 
-**✨ Try it now:** [https://rahultaskboard.up.railway.app/](https://rahultaskboard.up.railway.app/)
+**✨ Try it now:** [https://rahultaskboard.onrender.com](https://rahultaskboard.onrender.com)
 
 The application is deployed on Railway with PostgreSQL and Redis. Create an account and experience the real-time task management features!
 
