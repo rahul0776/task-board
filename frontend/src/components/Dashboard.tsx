@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { boardAPI, taskAPI } from '../services/api.ts';
 import { useAuth } from '../services/AuthContext.tsx';
+import Button from './ui/Button.tsx';
+import Card from './ui/Card.tsx';
 
 interface Board {
   id: number;
   title: string;
   description: string;
   created_at: string;
+}
+
+interface Task {
+  status: 'todo' | 'in_progress' | 'done';
 }
 
 const Dashboard: React.FC = () => {
@@ -20,14 +26,7 @@ const Dashboard: React.FC = () => {
   const [activeTasks, setActiveTasks] = useState(0);
   const { displayName, anonymousUserId, loading: authLoading } = useAuth();
 
-  useEffect(() => {
-    if (!authLoading && anonymousUserId) {
-      fetchBoards();
-      fetchTaskStats();
-    }
-  }, [authLoading, anonymousUserId]);
-
-  const fetchBoards = async () => {
+  const fetchBoards = useCallback(async () => {
     try {
       if (authLoading || !anonymousUserId) return;
       const response = await boardAPI.getBoards();
@@ -37,14 +36,14 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [authLoading, anonymousUserId]);
 
-  const fetchTaskStats = async () => {
+  const fetchTaskStats = useCallback(async () => {
     try {
       if (authLoading || !anonymousUserId) return;
       const response = await boardAPI.getBoards();
       const allBoards = response.data.boards || [];
-      
+
       let total = 0;
       let completed = 0;
       let active = 0;
@@ -55,8 +54,8 @@ const Dashboard: React.FC = () => {
           const tasksResponse = await taskAPI.getTasks(board.id);
           const tasks = tasksResponse.data.tasks || [];
           total += tasks.length;
-          completed += tasks.filter((t: any) => t.status === 'done').length;
-          active += tasks.filter((t: any) => t.status === 'in_progress').length;
+          completed += tasks.filter((t: Task) => t.status === 'done').length;
+          active += tasks.filter((t: Task) => t.status === 'in_progress').length;
         } catch (err) {
           console.error(`Failed to fetch tasks for board ${board.id}:`, err);
         }
@@ -68,7 +67,14 @@ const Dashboard: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch task stats:', error);
     }
-  };
+  }, [authLoading, anonymousUserId]);
+
+  useEffect(() => {
+    if (!authLoading && anonymousUserId) {
+      fetchBoards();
+      fetchTaskStats();
+    }
+  }, [authLoading, anonymousUserId, fetchBoards, fetchTaskStats]);
 
   const handleCreateBoard = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,6 +91,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handleDeleteBoard = async (id: number) => {
+    if (authLoading || !anonymousUserId) return;
     if (!window.confirm('Are you sure you want to delete this board?')) return;
     try {
       await boardAPI.deleteBoard(id);
@@ -100,204 +107,169 @@ const Dashboard: React.FC = () => {
     return Math.round((completedTasks / totalTasks) * 100);
   };
 
-  const getColorClass = (index: number) => {
-    const colors = [
-      'from-orange-200 to-orange-300',
-      'from-orange-300 to-orange-400',
-      'from-orange-200 to-orange-400',
-      'from-orange-100 to-orange-300',
-      'from-orange-300 to-orange-500',
-      'from-orange-200 to-orange-500',
-    ];
-    return colors[index % colors.length];
-  };
-
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg text-gray-600">Loading your workspace...</div>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-lg text-ink-soft">Loading your workspace...</div>
       </div>
     );
   }
 
+  const stats = [
+    { num: '01', label: 'Total boards', value: boards.length },
+    { num: '02', label: 'Active tasks', value: activeTasks },
+    { num: '03', label: 'Completed', value: completedTasks },
+    {
+      num: '04',
+      label: 'Productivity',
+      value: `${getProductivity()}%`,
+      sub: `${completedTasks}/${totalTasks} tasks`,
+    },
+  ];
+
   return (
-    <div className="min-h-screen">
-      {/* Header Section */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">
-          Welcome back, {displayName}! 👋
+    <div className="animate-fadeIn">
+      {/* Header */}
+      <div className="mb-10">
+        <p className="font-mono text-[13px] font-medium uppercase tracking-[0.12em] text-accent-deep mb-3">
+          Your workspace
+        </p>
+        <h1 className="font-display font-bold text-[34px] leading-[1.12] tracking-[-0.02em] text-ink m-0">
+          Welcome back, {displayName}.
         </h1>
-        <p className="text-gray-600">Here are your boards and projects</p>
+        <p className="text-ink-soft mt-2 mb-0">Here are your boards and projects</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-orange-200 to-orange-300 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm font-medium">Total Boards</p>
-              <p className="text-3xl font-bold mt-2">{boards.length}</p>
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+        {stats.map((s) => (
+          <Card key={s.num} hover className="p-6">
+            <div className="w-[42px] h-[42px] rounded-xl bg-[linear-gradient(135deg,rgba(251,169,77,0.18),rgba(244,115,12,0.14))] border border-[#f5dcbd] grid place-items-center mb-4 font-mono text-[15px] font-medium text-accent-deep">
+              {s.num}
             </div>
-            <div className="text-5xl opacity-50">📊</div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-orange-300 to-orange-400 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm font-medium">Active Tasks</p>
-              <p className="text-3xl font-bold mt-2">{activeTasks}</p>
-            </div>
-            <div className="text-5xl opacity-50">⚡</div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-orange-400 to-orange-500 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-pink-100 text-sm font-medium">Completed</p>
-              <p className="text-3xl font-bold mt-2">{completedTasks}</p>
-            </div>
-            <div className="text-5xl opacity-50">🎉</div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-orange-200 to-orange-400 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm font-medium">Productivity</p>
-              <p className="text-3xl font-bold mt-2">{getProductivity()}%</p>
-              <p className="text-xs text-green-100 mt-1">{completedTasks}/{totalTasks} tasks</p>
-            </div>
-            <div className="text-5xl opacity-50">📈</div>
-          </div>
-        </div>
+            <p className="font-mono text-[11.5px] uppercase tracking-[0.05em] text-muted m-0">
+              {s.label}
+            </p>
+            <p className="font-display font-bold text-[30px] text-ink mt-1 mb-0">{s.value}</p>
+            {s.sub && <p className="text-[13px] text-muted mt-1 mb-0">{s.sub}</p>}
+          </Card>
+        ))}
       </div>
 
-      {/* Boards Section */}
+      {/* Boards */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Your Boards</h2>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center space-x-2 bg-gradient-to-r from-orange-300 to-orange-400 hover:from-orange-400 hover:to-orange-500 text-white px-6 py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold"
-        >
-          <span className="text-xl">+</span>
-          <span>New Board</span>
-        </button>
+        <h2 className="font-display font-bold text-[24px] tracking-[-0.02em] text-ink m-0">
+          Your boards
+        </h2>
+        <Button onClick={() => setShowModal(true)}>+ New board</Button>
       </div>
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
+          <div className="spinner" />
         </div>
       ) : boards.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="text-8xl mb-4">📋</div>
-          <h3 className="text-2xl font-bold text-gray-700 mb-2">No boards yet</h3>
-          <p className="text-gray-500 mb-6">Create your first board to get started!</p>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-gradient-to-r from-orange-300 to-orange-400 hover:from-orange-400 hover:to-orange-500 text-white px-8 py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold"
-          >
-            Create Your First Board
-          </button>
-        </div>
+        <Card className="text-center py-20 px-6">
+          <h3 className="font-display font-semibold text-[21px] text-ink mb-2 mt-0">
+            No boards yet
+          </h3>
+          <p className="text-ink-soft mb-6 mt-0">Create your first board to get started!</p>
+          <Button onClick={() => setShowModal(true)}>Create your first board</Button>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {boards.map((board, index) => (
-            <div
-              key={board.id}
-              className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden"
-            >
-              <div className={`h-32 bg-gradient-to-br ${getColorClass(index)} p-6 relative overflow-hidden`}>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
-                <h3 className="text-2xl font-bold text-white relative z-10">{board.title}</h3>
-              </div>
-              <div className="p-6">
-                <p className="text-gray-600 mb-4 h-12 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {boards.map((board) => (
+            <Card key={board.id} hover className="overflow-hidden flex flex-col">
+              <div className="h-2 bg-accent-grad" />
+              <div className="p-6 flex flex-col flex-1">
+                <h3 className="font-display font-semibold text-[19px] text-ink m-0 mb-2">
+                  {board.title}
+                </h3>
+                <p className="text-[15.5px] text-ink-soft m-0 mb-4 flex-1">
                   {board.description || 'No description'}
                 </p>
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <span>📅 {new Date(board.created_at).toLocaleDateString()}</span>
-                  <span>0 tasks</span>
-                </div>
-                <div className="flex space-x-2">
+                <p className="font-mono text-[11.5px] text-muted m-0 mb-5">
+                  created {new Date(board.created_at).toLocaleDateString()}
+                </p>
+                <div className="flex gap-2.5">
                   <Link
                     to={`/board/${board.id}`}
-                    className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold py-2 px-4 rounded-lg transition-colors text-center"
+                    className="flex-1 inline-flex items-center justify-center gap-2 font-sans font-semibold text-[14px] leading-none px-4 py-[9px] rounded-[10px] no-underline bg-accent-grad text-white shadow-btn-accent transition-[transform,box-shadow] duration-[180ms] ease-out hover:-translate-y-0.5 hover:shadow-btn-accent-lg motion-reduce:transition-none motion-reduce:hover:transform-none"
                   >
-                    Open Board
+                    Open board
                   </Link>
-                  <button
+                  <Button
+                    variant="danger-ghost"
+                    size="sm"
                     onClick={() => handleDeleteBoard(board.id)}
-                    className="bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-4 rounded-lg transition-colors"
+                    aria-label={`Delete board ${board.title}`}
                   >
-                    🗑️
-                  </button>
+                    Delete
+                  </Button>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {/* Create Board Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full p-8 animate-fadeIn">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-800">Create New Board</h3>
+              <h3 className="font-display font-bold text-[24px] tracking-[-0.02em] text-ink m-0">
+                Create new board
+              </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
+                className="text-muted hover:text-ink text-2xl leading-none bg-transparent border-none cursor-pointer"
+                aria-label="Close"
               >
                 ×
               </button>
             </div>
             <form onSubmit={handleCreateBoard} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Board Title
+                <label className="block font-mono text-[11.5px] uppercase tracking-[0.05em] text-muted mb-2">
+                  Board title
                 </label>
                 <input
                   type="text"
                   required
                   value={newBoard.title}
                   onChange={(e) => setNewBoard({ ...newBoard, title: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
+                  className="w-full px-4 py-3 bg-white border border-line rounded-xl text-ink text-[15.5px] transition-colors duration-[180ms] focus:border-accent-soft"
                   placeholder="My Awesome Project"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block font-mono text-[11.5px] uppercase tracking-[0.05em] text-muted mb-2">
                   Description
                 </label>
                 <textarea
                   value={newBoard.description}
                   onChange={(e) => setNewBoard({ ...newBoard, description: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none resize-none"
+                  className="w-full px-4 py-3 bg-white border border-line rounded-xl text-ink text-[15.5px] transition-colors duration-[180ms] focus:border-accent-soft resize-none"
                   rows={3}
                   placeholder="What's this board about?"
                 />
               </div>
-              <div className="flex space-x-3 pt-4">
-                <button
+              <div className="flex gap-3 pt-2">
+                <Button
                   type="button"
+                  variant="ghost"
+                  className="flex-1"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-xl transition-colors"
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-orange-300 to-orange-400 hover:from-orange-400 hover:to-orange-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
-                >
-                  Create Board
-                </button>
+                </Button>
+                <Button type="submit" className="flex-1">
+                  Create board
+                </Button>
               </div>
             </form>
-          </div>
+          </Card>
         </div>
       )}
     </div>

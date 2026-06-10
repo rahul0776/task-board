@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { taskAPI } from '../services/api.ts';
 import { resolveWebSocketUrl, useWebSocket } from '../hooks/useWebSocket.ts';
+import Button from './ui/Button.tsx';
+import Card from './ui/Card.tsx';
+import PriorityBadge, { Priority } from './ui/PriorityBadge.tsx';
+import StatusDot, { Status } from './ui/StatusDot.tsx';
 
 interface Task {
   id: number;
   title: string;
   description: string;
-  status: 'todo' | 'in_progress' | 'done';
-  priority: 'low' | 'medium' | 'high';
+  status: Status;
+  priority: Priority;
   assignee_id?: number;
   due_date?: string;
   created_at: string;
@@ -22,7 +26,7 @@ const Board: React.FC = () => {
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
-    priority: 'medium' as 'low' | 'medium' | 'high',
+    priority: 'medium' as Priority,
   });
 
   const websocketUrl =
@@ -30,9 +34,21 @@ const Board: React.FC = () => {
 
   const { isConnected, lastMessage } = useWebSocket(websocketUrl);
 
+  const fetchTasks = useCallback(async () => {
+    if (!id) return;
+    try {
+      const response = await taskAPI.getTasks(parseInt(id));
+      setTasks(response.data.tasks || []);
+    } catch (error) {
+      console.error('Failed to fetch tasks:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchTasks();
-  }, [id]);
+  }, [fetchTasks]);
 
   useEffect(() => {
     if (lastMessage) {
@@ -44,19 +60,7 @@ const Board: React.FC = () => {
           break;
       }
     }
-  }, [lastMessage]);
-
-  const fetchTasks = async () => {
-    if (!id) return;
-    try {
-      const response = await taskAPI.getTasks(parseInt(id));
-      setTasks(response.data.tasks || []);
-    } catch (error) {
-      console.error('Failed to fetch tasks:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [lastMessage, fetchTasks]);
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,106 +95,66 @@ const Board: React.FC = () => {
     return tasks.filter(task => task.status === status);
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-700 border-red-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'low':
-        return 'bg-green-100 text-green-700 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  };
-
-  const getPriorityEmoji = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return '🔴';
-      case 'medium':
-        return '🟡';
-      case 'low':
-        return '🟢';
-      default:
-        return '⚪';
-    }
-  };
-
-  const TaskCard = ({ task }: { task: Task }) => (
-    <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-4 mb-3 cursor-pointer transform hover:-translate-y-1 border-l-4 border-indigo-500">
-      <div className="flex items-start justify-between mb-2">
-        <h4 className="font-semibold text-gray-800 flex-1">{task.title}</h4>
-        <span className={`text-xs px-2 py-1 rounded-full border ${getPriorityColor(task.priority)}`}>
-          {getPriorityEmoji(task.priority)} {task.priority}
-        </span>
-      </div>
-      {task.description && (
-        <p className="text-sm text-gray-600 mb-3">{task.description}</p>
-      )}
-      <div className="flex items-center justify-between text-xs text-gray-500">
-        <span>📅 {new Date(task.created_at).toLocaleDateString()}</span>
-        <div className="flex space-x-1">
-          {task.status !== 'todo' && (
-            <button
-              onClick={() => handleUpdateTaskStatus(task.id, 'todo')}
-              className="p-1 hover:bg-gray-100 rounded"
-              title="Move to To Do"
-            >
-              ⬅️
-            </button>
-          )}
-          {task.status === 'todo' && (
-            <button
-              onClick={() => handleUpdateTaskStatus(task.id, 'in_progress')}
-              className="p-1 hover:bg-blue-50 rounded text-blue-600"
-              title="Start Task"
-            >
-              ▶️
-            </button>
-          )}
-          {task.status === 'in_progress' && (
-            <button
-              onClick={() => handleUpdateTaskStatus(task.id, 'done')}
-              className="p-1 hover:bg-green-50 rounded text-green-600"
-              title="Complete Task"
-            >
-              ✅
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+  const moveButton = (label: string, onClick: () => void, title: string) => (
+    <button
+      onClick={onClick}
+      title={title}
+      className="font-mono text-[11px] text-ink-soft bg-white border border-line rounded-md px-2 py-0.5 cursor-pointer transition-colors duration-[180ms] hover:border-accent-soft hover:text-accent-deep"
+    >
+      {label}
+    </button>
   );
 
-  const Column = ({ 
-    title, 
-    status, 
-    color, 
-    emoji, 
-    tasks 
-  }: { 
-    title: string; 
-    status: Task['status']; 
-    color: string; 
-    emoji: string; 
+  const TaskCard = ({ task }: { task: Task }) => (
+    <Card hover className="!rounded-xl p-4 mb-3">
+      <div className="flex items-start justify-between gap-2 mb-1.5">
+        <h4 className="font-sans font-semibold text-[14.5px] leading-[1.35] text-ink m-0 flex-1">
+          {task.title}
+        </h4>
+        <PriorityBadge priority={task.priority} />
+      </div>
+      {task.description && (
+        <p className="text-[13.5px] text-ink-soft mt-0 mb-3">{task.description}</p>
+      )}
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[11px] text-muted">
+          {new Date(task.created_at).toLocaleDateString()}
+        </span>
+        <div className="flex gap-1.5">
+          {task.status !== 'todo' &&
+            moveButton('←', () => handleUpdateTaskStatus(task.id, 'todo'), 'Move to To Do')}
+          {task.status === 'todo' &&
+            moveButton('start →', () => handleUpdateTaskStatus(task.id, 'in_progress'), 'Start Task')}
+          {task.status === 'in_progress' &&
+            moveButton('done ✓', () => handleUpdateTaskStatus(task.id, 'done'), 'Complete Task')}
+        </div>
+      </div>
+    </Card>
+  );
+
+  const Column = ({
+    title,
+    status,
+    tasks,
+  }: {
+    title: string;
+    status: Status;
     tasks: Task[];
   }) => (
-    <div className="bg-gray-50 rounded-2xl p-4 min-w-[320px] flex-1">
-      <div className={`flex items-center justify-between mb-4 pb-3 border-b-2 ${color}`}>
-        <h3 className="font-bold text-lg flex items-center space-x-2">
-          <span className="text-2xl">{emoji}</span>
-          <span>{title}</span>
-        </h3>
-        <span className="bg-white px-3 py-1 rounded-full text-sm font-semibold text-gray-700 shadow-sm">
+    <div className="bg-[#f4ede2]/60 border border-line rounded-2xl p-4 min-w-[300px] flex-1">
+      <div className="flex items-center gap-2 mb-4 px-1">
+        <StatusDot status={status} />
+        <span className="font-mono text-[11.5px] font-medium uppercase tracking-[0.05em] text-ink-soft">
+          {title}
+        </span>
+        <span className="ml-auto font-mono text-[11px] text-ink-soft bg-white border border-line rounded-md px-2 py-0.5">
           {tasks.length}
         </span>
       </div>
-      <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2 custom-scrollbar">
+      <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-1">
         {tasks.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-            <p className="text-4xl mb-2">📭</p>
-            <p className="text-sm">No tasks here</p>
+          <div className="text-center py-8 text-muted">
+            <p className="text-sm m-0">No tasks here</p>
           </div>
         ) : (
           tasks.map(task => <TaskCard key={task.id} task={task} />)
@@ -200,112 +164,96 @@ const Board: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen pb-8">
+    <div className="pb-8 animate-fadeIn">
       {/* Header */}
-      <div className="mb-8 bg-white rounded-2xl shadow-md p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link 
-              to="/dashboard" 
-              className="text-2xl hover:bg-gray-100 p-2 rounded-lg transition-colors"
+      <Card className="mb-8 p-6">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <Link
+              to="/dashboard"
+              className="text-ink-soft hover:text-ink text-xl no-underline p-2 rounded-lg hover:bg-[#f4ede2] transition-colors duration-[180ms]"
+              aria-label="Back to dashboard"
             >
               ←
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 flex items-center space-x-3">
+              <h1 className="font-display font-bold text-[26px] tracking-[-0.02em] text-ink m-0 flex items-center gap-3">
                 <span>Board #{id}</span>
-                <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                  <span className="text-sm font-normal text-gray-500">
-                    {isConnected ? 'Live' : 'Offline'}
-                  </span>
-                </div>
+                <span className="inline-flex items-center gap-2 font-mono text-[12.5px] font-normal text-muted border border-line rounded-full px-3 py-1">
+                  <span
+                    className={`w-[7px] h-[7px] rounded-full ${
+                      isConnected
+                        ? 'bg-status-done motion-safe:animate-pulse'
+                        : 'bg-[#f87171]'
+                    }`}
+                  />
+                  {isConnected ? 'Live' : 'Offline'}
+                </span>
               </h1>
-              <p className="text-gray-600">Manage your tasks efficiently</p>
+              <p className="text-ink-soft m-0 mt-1">Manage your tasks efficiently</p>
             </div>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center space-x-2 bg-gradient-to-r from-orange-300 to-orange-400 hover:from-orange-400 hover:to-orange-500 text-white px-6 py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold"
-          >
-            <span className="text-xl">+</span>
-            <span>New Task</span>
-          </button>
+          <Button onClick={() => setShowCreateModal(true)}>+ New task</Button>
         </div>
-      </div>
+      </Card>
 
       {/* Kanban Board */}
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
+          <div className="spinner" />
         </div>
       ) : (
-        <div className="flex space-x-6 overflow-x-auto pb-4">
-          <Column
-            title="To Do"
-            status="todo"
-            color="border-blue-500"
-            emoji="📝"
-            tasks={getTasksByStatus('todo')}
-          />
-          <Column
-            title="In Progress"
-            status="in_progress"
-            color="border-yellow-500"
-            emoji="⚡"
-            tasks={getTasksByStatus('in_progress')}
-          />
-          <Column
-            title="Done"
-            status="done"
-            color="border-green-500"
-            emoji="✅"
-            tasks={getTasksByStatus('done')}
-          />
+        <div className="flex gap-5 overflow-x-auto pb-4">
+          <Column title="To Do" status="todo" tasks={getTasksByStatus('todo')} />
+          <Column title="In Progress" status="in_progress" tasks={getTasksByStatus('in_progress')} />
+          <Column title="Done" status="done" tasks={getTasksByStatus('done')} />
         </div>
       )}
 
       {/* Create Task Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 transform transition-all">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-lg w-full p-8 animate-fadeIn">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-800">Create New Task</h3>
+              <h3 className="font-display font-bold text-[24px] tracking-[-0.02em] text-ink m-0">
+                Create new task
+              </h3>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
+                className="text-muted hover:text-ink text-2xl leading-none bg-transparent border-none cursor-pointer"
+                aria-label="Close"
               >
                 ×
               </button>
             </div>
             <form onSubmit={handleCreateTask} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Task Title
+                <label className="block font-mono text-[11.5px] uppercase tracking-[0.05em] text-muted mb-2">
+                  Task title
                 </label>
                 <input
                   type="text"
                   required
                   value={newTask.title}
                   onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
+                  className="w-full px-4 py-3 bg-white border border-line rounded-xl text-ink text-[15.5px] transition-colors duration-[180ms] focus:border-accent-soft"
                   placeholder="What needs to be done?"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block font-mono text-[11.5px] uppercase tracking-[0.05em] text-muted mb-2">
                   Description
                 </label>
                 <textarea
                   value={newTask.description}
                   onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none resize-none"
+                  className="w-full px-4 py-3 bg-white border border-line rounded-xl text-ink text-[15.5px] transition-colors duration-[180ms] focus:border-accent-soft resize-none"
                   rows={3}
                   placeholder="Add more details..."
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block font-mono text-[11.5px] uppercase tracking-[0.05em] text-muted mb-2">
                   Priority
                 </label>
                 <div className="grid grid-cols-3 gap-3">
@@ -314,53 +262,34 @@ const Board: React.FC = () => {
                       key={priority}
                       type="button"
                       onClick={() => setNewTask({ ...newTask, priority })}
-                      className={`py-3 px-4 rounded-xl font-semibold transition-all ${
+                      className={`py-2.5 px-4 rounded-xl font-mono text-[12.5px] uppercase tracking-[0.04em] cursor-pointer border transition-[background,border-color,color] duration-[180ms] ${
                         newTask.priority === priority
-                          ? 'bg-gradient-to-r from-orange-300 to-orange-400 text-white shadow-lg scale-105'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-accent-grad text-white border-transparent shadow-btn-accent'
+                          : 'bg-white text-ink-soft border-line hover:border-accent-soft'
                       }`}
                     >
-                      {getPriorityEmoji(priority)} {priority}
+                      {priority}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="flex space-x-3 pt-4">
-                <button
+              <div className="flex gap-3 pt-2">
+                <Button
                   type="button"
+                  variant="ghost"
+                  className="flex-1"
                   onClick={() => setShowCreateModal(false)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-xl transition-colors"
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-orange-300 to-orange-400 hover:from-orange-400 hover:to-orange-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
-                >
-                  Create Task
-                </button>
+                </Button>
+                <Button type="submit" className="flex-1">
+                  Create task
+                </Button>
               </div>
             </form>
-          </div>
+          </Card>
         </div>
       )}
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #888;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #555;
-        }
-      `}</style>
     </div>
   );
 };
